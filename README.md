@@ -1,7 +1,7 @@
 # Conversation API
-A compact API for conversations on Bukkit and Paper servers, built with [Kyori's Adventure](https://github.com/KyoriPowered/adventure). Requires Java 8 or newer.
+A compact API for conversations on Bukkit and Paper servers. Requires Java 8 or newer.
 
-For conversations on Fabric servers, see https://github.com/Browsit/ConversationAPI-Fabric
+For conversations on Fabric servers, see https://github.com/Browsit/ConversationAPI-Fabric-adventureless
 
 ## Depend
 ```xml
@@ -15,7 +15,7 @@ For conversations on Fabric servers, see https://github.com/Browsit/Conversation
 ```xml
     <dependencies>
         <dependency>
-            <groupId>com.github.Browsit.ConversationAPI</groupId>
+            <groupId>com.github.Browsit.ConversationAPI-adventureless</groupId>
             <artifactId>bukkit</artifactId>
             <version>-SNAPSHOT</version>
         </dependency>

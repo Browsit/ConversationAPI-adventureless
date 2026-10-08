@@ -7,20 +7,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.platform.AudienceProvider;
+import java.util.function.Function;
+import org.browsit.conversations.api.audience.ConversationAudience;
 import org.browsit.conversations.api.data.Conversation;
 import org.browsit.conversations.api.provider.ConversationsProvider;
 import org.browsit.conversations.impl.data.ConversationImpl;
 
-public class AdventureConversationsProvider implements ConversationsProvider {
+public class ConversationsProviderImpl implements ConversationsProvider {
 
     private final List<ConversationImpl> conversations = new CopyOnWriteArrayList<>();
-    private final AudienceProvider adventureProvider;
+    private final Function<UUID, ConversationAudience> audienceFactory;
     private final ScheduledExecutorService conversationsExecutor;
 
-    private AdventureConversationsProvider(AudienceProvider adventureProvider) {
-        this.adventureProvider = adventureProvider;
+    private ConversationsProviderImpl(Function<UUID, ConversationAudience> audienceFactory) {
+        this.audienceFactory = audienceFactory;
         this.conversationsExecutor = Executors.newSingleThreadScheduledExecutor();
         this.conversationsExecutor.scheduleAtFixedRate(() -> {
             try {
@@ -31,8 +31,8 @@ public class AdventureConversationsProvider implements ConversationsProvider {
         }, 0L, 1L, TimeUnit.MILLISECONDS);
     }
 
-    public static AdventureConversationsProvider create(AudienceProvider audienceProvider) {
-        return new AdventureConversationsProvider(audienceProvider);
+    public static ConversationsProviderImpl create(Function<UUID, ConversationAudience> audienceFactory) {
+        return new ConversationsProviderImpl(audienceFactory);
     }
 
     @Override
@@ -49,8 +49,8 @@ public class AdventureConversationsProvider implements ConversationsProvider {
 
     @Override
     public Conversation createConversation(UUID userId) {
-        Audience adventureAudience = this.adventureProvider.player(userId);
-        ConversationImpl conversation = new ConversationImpl(this, adventureAudience);
+        ConversationAudience audience = this.audienceFactory.apply(userId);
+        ConversationImpl conversation = new ConversationImpl(this, audience);
         this.conversations.add(conversation);
         return conversation;
     }

@@ -1,6 +1,5 @@
 package org.browsit.conversations.api.clause;
 
-import net.kyori.adventure.text.Component;
 import org.browsit.conversations.api.audience.ConversationAudience;
 
 /**

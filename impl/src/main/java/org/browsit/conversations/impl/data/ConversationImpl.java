@@ -5,19 +5,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.identity.Identity;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.browsit.conversations.api.action.Prompt;
-import org.browsit.conversations.impl.audience.AdventureConversationAudience;
 import org.browsit.conversations.api.audience.ConversationAudience;
 import org.browsit.conversations.api.clause.Clause;
 import org.browsit.conversations.api.data.ChatVisibility;
 import org.browsit.conversations.api.data.Conversation;
 import org.browsit.conversations.api.util.StringValidator;
 import org.browsit.conversations.impl.action.PromptImpl;
-import org.browsit.conversations.impl.provider.AdventureConversationsProvider;
+import org.browsit.conversations.impl.provider.ConversationsProviderImpl;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -25,15 +20,14 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ConversationImpl implements Conversation {
 
-    private final AdventureConversationsProvider provider;
+    private final ConversationsProviderImpl provider;
 
-    private final Audience audience;
-    private final ConversationAudience wrappedAudience;
+    private final ConversationAudience audience;
 
     private boolean finished, echo;
 
     @Nullable
-    private Component prefix, title, onComplete;
+    private String prefix, title, onComplete;
 
     @Nullable
     private List<Clause> endClauses;
@@ -44,13 +38,12 @@ public class ConversationImpl implements Conversation {
     private PromptImpl<?> currentPrompt;
 
     /**
-     * @param provider          The provider that created this conversation.
-     * @param adventureAudience The audience that this conversation is for.
+     * @param provider The provider that created this conversation.
+     * @param audience The audience that this conversation is for.
      */
-    public ConversationImpl(AdventureConversationsProvider provider, Audience adventureAudience) {
+    public ConversationImpl(ConversationsProviderImpl provider, ConversationAudience audience) {
         this.provider = provider;
-        this.audience = adventureAudience;
-        this.wrappedAudience = new AdventureConversationAudience(this.audience);
+        this.audience = audience;
     }
 
     /**
@@ -64,7 +57,7 @@ public class ConversationImpl implements Conversation {
 
         // FIXME: There's no guarantee that getConversationOf will return the right conversation. It just finds the first one that matches this audience
         // 2026-05: Added temporary solution via #title - developers should compare as needed
-        final Optional<Conversation> existing = this.audience.get(Identity.UUID).flatMap(this.provider::getConversationOf);
+        final Optional<Conversation> existing = this.provider.getConversationOf(this.audience.getUniqueId());
 
         existing.ifPresent(conversation -> {
             if (conversation != this) {
@@ -103,7 +96,7 @@ public class ConversationImpl implements Conversation {
                 }
 
                 if (clause.hasBeenTriggered()) {
-                    clause.trigger(this.wrappedAudience); // Bit backwards. Potentially rework this into a list of ClauseActions?
+                    clause.trigger(this.audience); // Bit backwards. Potentially rework this into a list of ClauseActions?
                     this.finish();
                     return;
                 }
@@ -143,7 +136,7 @@ public class ConversationImpl implements Conversation {
             throw new IllegalArgumentException("Text can't be null");
         }
 
-        this.title = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.title = text;
         return this;
     }
 
@@ -174,7 +167,7 @@ public class ConversationImpl implements Conversation {
             throw new IllegalArgumentException("Text can't be null");
         }
 
-        this.onComplete = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.onComplete = text;
         return this;
     }
 
@@ -191,7 +184,7 @@ public class ConversationImpl implements Conversation {
             throw new IllegalArgumentException("Text can't be null");
         }
 
-        this.prefix = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.prefix = text;
         return this;
     }
 
@@ -216,15 +209,11 @@ public class ConversationImpl implements Conversation {
     }
 
     public boolean inConversation(UUID uuid) {
-        if (this.audience == null) {
-            return false;
-        }
         if (this.currentPrompt == null) {
             return false; // Not started yet
         }
 
-        final Audience loneAudience = this.audience.filterAudience(input -> input.get(Identity.UUID).map(value -> value.equals(uuid)).orElse(false));
-        return loneAudience.pointers().get(Identity.UUID).isPresent();
+        return this.audience.getUniqueId().equals(uuid);
     }
 
     public String getCurrentPromptText() {
@@ -256,7 +245,7 @@ public class ConversationImpl implements Conversation {
     //** INTERNAL **//
 
     public ConversationAudience getAudience() {
-        return this.wrappedAudience;
+        return this.audience;
     }
 
     public void handleInput(String input) {
@@ -279,7 +268,7 @@ public class ConversationImpl implements Conversation {
             this.finish();
             if (this.onComplete != null) {
                 if (this.prefix != null) {
-                    this.audience.sendMessage(this.prefix.append(Component.text(" ").append(this.onComplete)));
+                    this.audience.sendMessage(this.prefix + " " + this.onComplete);
                 } else {
                     this.audience.sendMessage(this.onComplete);
                 }
@@ -290,7 +279,7 @@ public class ConversationImpl implements Conversation {
         this.currentPrompt.display();
     }
 
-    public @Nullable Component getPrefix() {
+    public @Nullable String getPrefix() {
         return this.prefix;
     }
 }

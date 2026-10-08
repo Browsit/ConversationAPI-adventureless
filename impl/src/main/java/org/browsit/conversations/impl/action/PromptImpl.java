@@ -1,8 +1,6 @@
 package org.browsit.conversations.impl.action;
 
 import java.util.function.Predicate;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.browsit.conversations.api.action.Converter;
 import org.browsit.conversations.api.action.Fetch;
 import org.browsit.conversations.api.action.Prompt;
@@ -17,8 +15,8 @@ import org.jetbrains.annotations.NotNull;
 public class PromptImpl<A> implements Prompt<A> {
 
     private final ConversationImpl conversation;
-    private final Component text;
-    private Component title;
+    private final String text;
+    private String title;
     private int id;
 
     private int attempts = 3;
@@ -28,12 +26,12 @@ public class PromptImpl<A> implements Prompt<A> {
     private Fetch<A> inputHandler;
     private Predicate<A> inputFilter;
     private Converter<A> stringConverter;
-    private Component conversionFailedText = Constants.CONVERSION_FAILED_MESSAGE;
-    private Component filterFailedText = Constants.INVALID_INPUT_MESSAGE;
-    private Component attemptsOverText = Constants.ATTEMPTS_OVER_MESSAGE;
+    private String conversionFailedText = Constants.CONVERSION_FAILED_MESSAGE;
+    private String filterFailedText = Constants.INVALID_INPUT_MESSAGE;
+    private String attemptsOverText = Constants.ATTEMPTS_OVER_MESSAGE;
 
     public PromptImpl(String text, ConversationImpl impl) {
-        this.text = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.text = text;
         this.conversation = impl;
     }
 
@@ -89,7 +87,7 @@ public class PromptImpl<A> implements Prompt<A> {
      */
     @Override
     public PromptImpl<A> conversionFailText(@NotNull String text) {
-        this.conversionFailedText = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.conversionFailedText = text;
         return this;
     }
 
@@ -102,7 +100,7 @@ public class PromptImpl<A> implements Prompt<A> {
      */
     @Override
     public PromptImpl<A> filterFailText(@NotNull String text) {
-        this.filterFailedText = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.filterFailedText = text;
         return this;
     }
 
@@ -115,7 +113,7 @@ public class PromptImpl<A> implements Prompt<A> {
      */
     @Override
     public PromptImpl<A> allAttemptsFailedText(@NotNull String text) {
-        this.attemptsOverText = LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+        this.attemptsOverText = text;
         return this;
     }
 
@@ -123,7 +121,7 @@ public class PromptImpl<A> implements Prompt<A> {
 
     public void display() {
         if (this.conversation.getPrefix() != null) {
-            this.conversation.getAudience().sendMessage(this.conversation.getPrefix().append(Component.text(" ")).append(this.text));
+            this.conversation.getAudience().sendMessage(this.conversation.getPrefix() + " " + this.text);
             return;
         }
         this.conversation.getAudience().sendMessage(this.text);
@@ -166,7 +164,7 @@ public class PromptImpl<A> implements Prompt<A> {
         return this.currentAttempt < this.attempts;
     }
 
-    public Component getAttemptsOverText() {
+    public String getAttemptsOverText() {
         return this.attemptsOverText;
     }
 
@@ -183,14 +181,14 @@ public class PromptImpl<A> implements Prompt<A> {
     }
 
     public String getTitle() {
-        return LegacyComponentSerializer.legacyAmpersand().serialize(title);
+        return this.title;
     }
 
-    public void setTitle(Component title) {
+    public void setTitle(String title) {
         this.title = title;
     }
 
     public String getText() {
-        return LegacyComponentSerializer.legacyAmpersand().serialize(text);
+        return this.text;
     }
 }

@@ -1,9 +1,11 @@
 package org.browsit.conversations.bukkit;
 
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import org.browsit.conversations.api.Conversations;
 import org.browsit.conversations.api.provider.ConversationsProvider;
-import org.browsit.conversations.impl.provider.AdventureConversationsProvider;
+import org.browsit.conversations.impl.audience.ConversationAudienceImpl;
+import org.browsit.conversations.impl.provider.ConversationsProviderImpl;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -21,8 +23,12 @@ public class BukkitConversations {
      */
     public static void init(JavaPlugin plugin) {
         if (initialized) throw new IllegalStateException("Conversations(Bukkit) API already initialized");
-        BukkitAudiences ba = BukkitAudiences.create(plugin);
-        ConversationsProvider provider = AdventureConversationsProvider.create(ba);
+        ConversationsProvider provider = ConversationsProviderImpl.create(userId -> new ConversationAudienceImpl(userId, message -> {
+            Player player = plugin.getServer().getPlayer(userId);
+            if (player != null) {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+            }
+        }));
         Conversations.init(provider);
         new BukkitConversationsForwarder().register(plugin);
         initialized = true;
